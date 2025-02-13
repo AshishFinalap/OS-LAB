@@ -1,0 +1,660 @@
+OS Lab
+ 1)FCFS
+ #include <stdio.h>
+ #define max 30
+ int main()
+ {
+ int i, j, n, bt[max], at[max], wt[max], tat[max], temp[max];
+ float awt = 0, atat = 0;
+ // Taking input for number of processes
+ printf("Enter the number of processes: ");  
+scanf("%d", &n);  
+// Taking input for burst time and arrival time of each process
+ printf("Enter the burst time and arrival time for each process:\n");  
+for (i = 0; i < n; i++)  
+{  
+printf("Process %d:\n", i + 1);  
+printf("Burst time: ");  
+scanf("%d", &bt[i]);  
+printf("Arrival time: ");  
+scanf("%d", &at[i]);  
+}  
+// Sorting processes based on arrival time
+ for (i = 0; i < n; i++)  
+{  
+for (j = i + 1; j < n; j++)  
+{  
+if (at[i] > at[j])  
+{  
+int tempVal;
+ // Swap arrival time
+ tempVal = at[i];
+ at[i] = at[j];
+at[j] = tempVal;
+ // Swap burst time accordingly
+ tempVal = bt[i];
+ bt[i] = bt[j];
+ bt[j] = tempVal;
+ }  
+}  
+}  
+// Initialize the first process's waiting time and completion time
+ temp[0] = at[0]; // Start at the arrival time of the first process
+ printf("\nProcess\t Burst Time\t Arrival Time\t Waiting Time\t Turnaround
+ Time\n");  
+for (i = 0; i < n; i++)  
+{  
+// Calculate waiting time and turn around time
+ wt[i] = (i == 0) ? 0 : temp[i] - at[i];  // Waiting time = start time 
+arrival time
+ tat[i] = wt[i] + bt[i];                  
++ burst time
+ // Turnaround time = waiting time
+ // Update completion time for next process
+ temp[i+1] = temp[i] + bt[i];  
+// Accumulate waiting time and turnaround time for average calculation
+ awt += wt[i];  
+atat += tat[i];  
+// Output the result for this process
+ printf("%d\t %d\t\t %d\t\t %d\t\t %d\n", i+1, bt[i], at[i], wt[i],
+ tat[i]);  
+}  
+// Calculate average waiting time and turnaround time
+ awt /= n;  
+atat /= n;  
+// Print averages
+}
+ Priority Non preemptive:
+ #include <stdio.h>
+ #include <stdlib.h>
+ struct Process {
+    int priority;
+    int pid;
+    int at;
+    int bt;
+    int ct;
+    int tat;
+    int wt;
+    int done_flag;
+ };
+ // Function to sort processes by arrival time
+ void sortBYat(struct Process p[], int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (p[j].at > p[j + 1].at) {
+                struct Process r = p[j];
+                p[j] = p[j + 1];
+                p[j + 1] = r;
+ printf("\nAverage waiting time = %.2f\n", awt);  
+printf("Average turnaround time = %.2f\n", atat);  
+return 0;  
+            }
+        }
+    }
+ }
+ // Function to perform non-preemptive priority scheduling
+ void non_preemptivePriority(struct Process p[], int n) {
+    int completed = 0;
+    int time = 0;
+    sortBYat(p, n); // Sort processes by arrival time
+    while (completed < n) {
+        int minId = -1;
+        int minPriority = 1e9;
+        // Find the process with the highest priority (lowest value) that has arrived and not been
+ executed
+        for (int i = 0; i < n; i++) {
+            if (!p[i].done_flag && p[i].at <= time && p[i].priority < minPriority) {
+                minId = i;
+                minPriority = p[i].priority;
+            }
+        }
+        // If no process is found, increment time
+        if (minId == -1) {
+            time++;
+        } else {
+            // Execute the process with the highest priority
+            p[minId].ct = time + p[minId].bt;
+            p[minId].tat = p[minId].ct - p[minId].at;
+            p[minId].wt = p[minId].tat - p[minId].bt;
+            p[minId].done_flag = 1;
+            time = p[minId].ct; // Update time to the completion time of the current process
+            completed++;
+        }
+    }
+ }
+ // Function to print the results
+ void printResults(struct Process p[], int n) {
+    printf("PID\tAT\tBT\tPriority\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t\t%d\t%d\t%d\n",
+               p[i].pid, p[i].at, p[i].bt, p[i].priority, p[i].ct, p[i].tat, p[i].wt);
+    }
+ }
+ int main() {
+    int n;
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+    struct Process p[n];
+    // Input process details
+    for (int i = 0; i < n; i++) {
+        printf("Enter details for process %d:\n", i + 1);
+        p[i].pid = i + 1;
+        printf("Arrival Time: ");
+        scanf("%d", &p[i].at);
+        printf("Burst Time: ");
+        scanf("%d", &p[i].bt);
+        printf("Priority: ");
+        scanf("%d", &p[i].priority);
+        p[i].done_flag = 0; // Initialize done_flag to 0
+    }
+    // Perform non-preemptive priority scheduling
+    non_preemptivePriority(p, n);
+    // Print the results
+    printResults(p, n);
+    return 0;
+ }
+ 3)Priority Preemptive
+ #include <stdio.h>
+ #include <stdlib.h>
+ struct Process {
+    int priority;
+    int pid;
+    int at;
+    int bt;
+    int ct;
+    int tat;
+    int wt;
+    int rt; // Remaining time
+ };
+ // Function to perform preemptive priority scheduling
+ void preemptivePriority(struct Process p[], int n) {
+    int completed = 0;
+    int time = 0;
+    // Initialize remaining time for all processes
+    for (int i = 0; i < n; i++) {
+        p[i].rt = p[i].bt;
+    }
+    while (completed < n) {
+        int minIdx = -1;
+        int minPriority = 1e9;
+        // Find the process with the highest priority (lowest value) that has arrived and has
+ remaining time
+        for (int i = 0; i < n; i++) {
+            if (p[i].rt > 0 && p[i].at <= time && p[i].priority < minPriority) {
+                minIdx = i;
+                minPriority = p[i].priority;
+            }
+        }
+        // If no process is found, increment time
+        if (minIdx == -1) {
+            time++;
+        } else {
+            // Execute the process for 1 unit of time
+            p[minIdx].rt--;
+            // If the process has completed execution
+            if (p[minIdx].rt == 0) {
+                p[minIdx].ct = time + 1; // Completion time
+                p[minIdx].tat = p[minIdx].ct - p[minIdx].at; // Turnaround time
+                p[minIdx].wt = p[minIdx].tat - p[minIdx].bt; // Waiting time
+                completed++;
+            }
+            // Increment time
+            time++;
+        }
+    }
+ }
+ // Function to print the results
+ void printResults(struct Process p[], int n) {
+    printf("PID\tAT\tBT\tPriority\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t\t%d\t%d\t%d\n",
+               p[i].pid, p[i].at, p[i].bt, p[i].priority, p[i].ct, p[i].tat, p[i].wt);
+    }
+ }
+int main() {
+    int n;
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+    struct Process p[n];
+    // Input process details
+    for (int i = 0; i < n; i++) {
+        printf("Enter details for process %d:\n", i + 1);
+        p[i].pid = i + 1;
+        printf("Arrival Time: ");
+        scanf("%d", &p[i].at);
+        printf("Burst Time: ");
+        scanf("%d", &p[i].bt);
+        printf("Priority: ");
+        scanf("%d", &p[i].priority);
+    }
+    // Perform preemptive priority scheduling
+    preemptivePriority(p, n);
+    // Print the results
+    printResults(p, n);
+    return 0;
+ }
+ 4)Round Robin
+ #include <stdio.h>
+ #include <stdlib.h>
+struct Process {
+    int pid;
+    int at;  // Arrival Time
+    int bt;  // Burst Time
+    int ct;  // Completion Time
+    int tat; // Turnaround Time
+    int wt;  // Waiting Time
+    int rt;  // Remaining Time
+ };
+ void sortBYat(struct Process p[], int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (p[j].at > p[j + 1].at) {
+                struct Process temp = p[j];
+                p[j] = p[j + 1];
+                p[j + 1] = temp;
+            }
+        }
+    }
+ }
+ void roundrobin(struct Process p[], int n, int quantum) {
+    int done = 0;
+    int time = 0;
+    sortBYat(p, n);
+    // Initialize remaining time
+    for (int i = 0; i < n; i++) {
+        p[i].rt = p[i].bt;
+    }
+    while (done < n) {
+        int flag = 0; // Flag to check if any process was executed in the current iteration
+        for (int i = 0; i < n; i++) {
+            if (p[i].rt > 0 && p[i].at <= time) {
+                flag = 1; // At least one process is executed
+                if (p[i].rt > quantum) {
+                    time += quantum;
+                    p[i].rt -= quantum;
+                } else {
+                    time += p[i].rt;
+                    p[i].rt = 0;
+                    p[i].ct = time;
+                    p[i].tat = p[i].ct - p[i].at;
+                    p[i].wt = p[i].tat - p[i].bt;
+                    done++;
+                }
+            }
+        }
+        // If no process was executed in this iteration, increment time
+        if (flag == 0) {
+            time++;
+        }
+    }
+ }
+ int main() {
+    int n, quantum;
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+    struct Process p[n];
+    for (int i = 0; i < n; i++) {
+        printf("Enter arrival time and burst time for process %d: ", i + 1);
+        scanf("%d %d", &p[i].at, &p[i].bt);
+        p[i].pid = i + 1;
+        p[i].rt = p[i].bt;
+    }
+    printf("Enter time quantum: ");
+    scanf("%d", &quantum);
+    roundrobin(p, n, quantum);
+    printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t%d\t%d\n", p[i].pid, p[i].at, p[i].bt, p[i].ct, p[i].tat, p[i].wt);
+    }
+    return 0;
+ }
+5)SJF
+ #include <stdio.h>
+ #include <stdlib.h>
+ struct Process {
+ int pid;
+ int at;
+ int bt;
+ int ct;
+ int tat;
+ int wt;
+ int done_flag;
+ };
+ // Function to sort processes by arrival time
+ void sortBYat(struct Process p[], int n) {
+ for (int i = 0; i < n; i++) {
+ for (int j = 0; j < n - i - 1; j++) {
+ if (p[j].at > p[j + 1].at) {
+ struct Process r = p[j];
+ p[j] = p[j + 1];
+ p[j + 1] = r;
+ }
+ }
+ }
+ }
+ // Function to perform SJF scheduling
+ void sjf(struct Process p[], int n) {
+ int time = 0;
+ int completed = 0;
+ // Sort processes by arrival time
+ sortBYat(p, n);
+ while (completed < n) {
+ int minId = -1;
+ int minBt = 1e9;
+ // Find the process with the shortest burst time that has arrived and not
+ been executed
+for (int i = 0; i < n; i++) {
+ if (!p[i].done_flag && p[i].at <= time && p[i].bt < minBt) {
+ minId = i;
+ minBt = p[i].bt;
+ }
+ }
+ // If no process is found, increment time
+ if (minId == -1) {
+ time++;
+ } else {
+ // Execute the process with the shortest burst time
+ p[minId].ct = time + p[minId].bt; // Completion time
+ p[minId].tat = p[minId].ct - p[minId].at; // Turnaround time
+ p[minId].wt = p[minId].tat - p[minId].bt; // Waiting time
+ time = p[minId].ct; // Update time to the completion time of the
+ current process
+ p[minId].done_flag = 1; // Mark the process as completed
+ completed++;
+ }
+ }
+ }
+ // Function to print the results
+ void printResults(struct Process p[], int n) {
+ printf("PID\tAT\tBT\tCT\tTAT\tWT\n");
+ for (int i = 0; i < n; i++) {
+ printf("%d\t%d\t%d\t%d\t%d\t%d\n",
+ p[i].pid, p[i].at, p[i].bt, p[i].ct, p[i].tat, p[i].wt);
+ }
+ }
+ int main() {
+ int n;
+ printf("Enter the number of processes: ");
+ scanf("%d", &n);
+ struct Process p[n];
+ // Input process details
+for (int i = 0; i < n; i++) {
+ printf("Enter details for process %d:\n", i + 1);
+ p[i].pid = i + 1;
+ printf("Arrival Time: ");
+ scanf("%d", &p[i].at);
+ printf("Burst Time: ");
+ scanf("%d", &p[i].bt);
+ p[i].done_flag = 0; // Initialize done_flag to 0
+ }
+ // Perform SJF scheduling
+ sjf(p, n);
+ // Print the results
+ printResults(p, n);
+ return 0;
+ }
+ 6)SRTF
+ #include <stdio.h>
+ #include <stdlib.h>
+ struct Process {
+ int pid;
+ int at;
+ int bt;
+ int ct;
+ int tat;
+ int wt;
+ int rt; // Remaining time
+ };
+ // Function to perform SRTF scheduling
+ void srtf(struct Process p[], int n) {
+ int completed = 0;
+ int time = 0;
+ // Initialize remaining time for all processes
+ for (int i = 0; i < n; i++) {
+p[i].rt = p[i].bt;
+ }
+ while (completed < n) {
+ int min_Id = -1;
+ int min_Bt = 1e9;
+ // Find the process with the shortest remaining time that has arrived and
+ has remaining time
+ for (int i = 0; i < n; i++) {
+ if (p[i].at <= time && p[i].rt > 0 && p[i].rt < min_Bt) {
+ min_Id = i;
+ min_Bt = p[i].rt;
+ }
+ }
+ // If no process is found, increment time
+ if (min_Id == -1) {
+ time++;
+ } else {
+ // Execute the process for 1 unit of time
+ p[min_Id].rt--;
+ // If the process has completed execution
+ if (p[min_Id].rt == 0) {
+ completed++;
+ p[min_Id].ct = time + 1; // Completion time
+ p[min_Id].tat = p[min_Id].ct - p[min_Id].at; // Turnaround time
+ p[min_Id].wt = p[min_Id].tat - p[min_Id].bt; // Waiting time
+ }
+ // Increment time
+ time++;
+ }
+ }
+ }
+ // Function to print the results
+ void printResults(struct Process p[], int n) {
+ printf("PID\tAT\tBT\tCT\tTAT\tWT\n");
+for (int i = 0; i < n; i++) {
+ printf("%d\t%d\t%d\t%d\t%d\t%d\n",
+ p[i].pid, p[i].at, p[i].bt, p[i].ct, p[i].tat, p[i].wt);
+ }
+ }
+ int main() {
+ int n;
+ printf("Enter the number of processes: ");
+ scanf("%d", &n);
+ struct Process p[n];
+ // Input process details
+ for (int i = 0; i < n; i++) {
+ printf("Enter details for process %d:\n", i + 1);
+ p[i].pid = i + 1;
+ printf("Arrival Time: ");
+ scanf("%d", &p[i].at);
+ printf("Burst Time: ");
+ scanf("%d", &p[i].bt);
+ }
+ // Perform SRTF scheduling
+ srtf(p, n);
+ // Print the results
+ printResults(p, n);
+ return 0;
+ }
+ 7)Print Name 3 Times
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <sys/wait.h>
+ int main() {
+    pid_t pid1, pid2, pid3;
+    pid1 = fork();
+    if (pid1 == 0) {
+        printf("Process 1: Ashish Tiwary\n");
+    } else if (pid1 > 0) {
+        pid2 = fork();
+        if (pid2 == 0) {
+            printf("Process 2: Ashish Tiwary\n");
+        } else if (pid2 > 0) {
+            pid3 = fork();
+            if (pid3 == 0) {
+                printf("Process 3: Ashish Tiwary\n");
+            } else if (pid3 > 0) {
+                printf("Parent Process: Ashish Tiwary\n");
+                wait(NULL);
+                wait(NULL);
+                wait(NULL);
+            } else {
+                // Fork failed
+                printf("Third fork failed\n");
+            }
+        } else {
+            // Fork failed
+            printf("Second fork failed\n");
+ }
+ } else {#include <stdio.h>
+ #include <unistd.h>
+ int main() {
+ char *args[] = {"./sum_program", NULL}; // Path to the second program
+ execv(args[0], args); // Replace current process with "sum_program"
+ perror("execv failed"); // If execv fails, this message will be printed
+ return 1;
+ }
+ }
+ // Fork failed
+ printf("First fork failed\n");
+ }
+ return 0;
+ 8)Parent Process id
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <sys/wait.h>
+ int main()
+ { pid_t pid = fork();
+ if (pid < 0)
+ { printf("Fork failed!\n");
+ return 1;
+ }
+ else if (pid == 0)
+ {
+ printf("\nThis is the Child Process:\n");
+ printf("My name is Ashish Tiwary\n");
+ printf("My Process ID is: %d\n", getpid());
+ printf("My Parent's Process ID is: %d\n", getppid());
+ } else
+{ wait(NULL);
+ printf("\nThis is the Parent Process:\n");
+ printf("My name is Ashish Tiwary's Parent\n");
+ printf("My Process ID is: %d\n", getpid());
+ }
+ return 0;
+ }
+ 9)Child 1st then parent
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <sys/wait.h>
+ #include <stdlib.h>
+ int main() {
+ pid_t pid = fork();
+ if (pid < 0) {
+ printf("Fork failed!\n");
+ return 1;
+ } else if (pid == 0) {
+ printf("\nThis is the Child Process:\n");
+ printf("My name is Ashish\n");
+ printf("My Process ID is: %d\n", getpid());
+ printf("My Parent's Process ID is: %d\n", getppid());
+ printf("Child process is terminating...\n");
+ exit(0); // Explicitly terminate child process
+ } else {
+ int status;
+ waitpid(pid, &status, 0);
+ if (WIFEXITED(status)) {
+ printf("\nChild process terminated with status: %d\n", WEXITSTATUS(status));
+ }
+ printf("\nThis is the Parent Process:\n");
+ printf("My name is Ashish's Parent\n");
+ printf("My Process ID is: %d\n", getpid());
+ printf("Parent process is terminating...\n");
+ }
+ return 0;
+ }
+10)Prints 2 numbers along with the name
+ #include <stdio.h>
+ #include <unistd.h>
+ int main() {
+ char *args[] = {"./sum_program", NULL}; // Path to the second program
+ execv(args[0], args); // Replace current process with "sum_program"
+ perror("execv failed"); // If execv fails, this message will be printed
+ return 1;
+ }
+ 11)Pthreads
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <pthread.h>
+ void print_message_function(void ptr);
+ int main()
+ {
+ pthread_t thread1,thread2;
+ char *message1= "Ashish";
+ char *message2= "Tiwary";
+ int iret1,iret2;
+ iret1=pthread_create(&thread1,NULL,print_message_function,(void*)message1);
+ iret2=pthread_create(&thread2,NULL,print_message_function,(void*)message2);
+ pthread_join(thread1,NULL);
+ pthread_join(thread2,NULL);
+ printf("Thread1 returns:%d\n",iret1);
+ printf("Thread2 returns:%d\n",iret2);
+ return 0;
+ }
+void print_message_function(void ptr)
+ {
+    char *message;
+    message=(char *)ptr;
+    printf("%s\n",message);
+ }
+ 12)Pthreads
+ #include <pthread.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #define NUM_THREADS 5
+ void PrintYourName(void threadid)
+ {
+    long tid;
+    tid = (long)threadid;
+    printf("Hello World! It's me, Ashish with thread #%ld!\n", tid);
+    pthread_exit(NULL);
+ }
+ int main (int argc, char *argv[])
+ {
+    pthread_t threads[NUM_THREADS]; 
+    int rc;
+    long t;
+    for(t = 0; t < NUM_THREADS; t++){
+        printf("In main: creating thread %ld\n", t);
+        rc = pthread_create(&threads[t], NULL, PrintYourName, (void *)t);
+        if (rc){
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1); 
+        }
+    }
+    pthread_exit(NULL);
+ }
+ 13)Process syncrhronization
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <pthread.h>
+ void *functionC();
+ pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER; 
+int counter = 0;
+ int main()
+ {
+    int rc1, rc2;
+    pthread_t thread1, thread2;
+    if ((rc1 = pthread_create(&thread1, NULL, functionC, NULL)))
+    {
+        printf("Thread creation failed: %d\n", rc1);
+    }
+    if ((rc2 = pthread_create(&thread2, NULL, functionC, NULL)))
+    {
+ }
+ printf("Thread creation failed: %d\n", rc2);
+ pthread_join(thread1, NULL);
+ pthread_join(thread2, NULL);
+ exit(0);
+ }
+ void *functionC()
+ {
+ }
+ pthread_mutex_lock(&mutex1); 
+ counter++; 
+ printf("Counter value: %d\n", counter); 
+ pthread_mutex_unlock(&mutex1); 
